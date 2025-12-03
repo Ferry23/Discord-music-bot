@@ -3,8 +3,6 @@ yt-dlp>=2023.0.0
 youtube-search-python>=1.6.0
 lyricsgenius>=3.0.0
 python-dotenv>=1.0.0
-asyncio
-logging
 PyNaCl
 
 # System dependencies (not installed via pip):
