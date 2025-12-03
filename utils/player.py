@@ -21,28 +21,58 @@ class MusicPlayer:
         try:
             import shutil
             import os
+            import subprocess
 
             # Try multiple ways to find FFmpeg
             ffmpeg_path = None
 
-            # Method 1: Check PATH
-            ffmpeg_path = shutil.which('ffmpeg')
+            # Method 1: Check PATH (case insensitive)
+            for name in ['ffmpeg', 'ffmpeg.exe', 'FFMPEG', 'FFMPEG.EXE']:
+                ffmpeg_path = shutil.which(name)
+                if ffmpeg_path:
+                    break
 
-            # Method 2: Check common installation locations
+            # Method 2: Check common installation locations (case insensitive)
             if not ffmpeg_path:
                 common_paths = [
                     r'C:\ProgramData\chocolatey\bin\ffmpeg.exe',
+                    r'C:\ProgramData\Chocolatey\bin\ffmpeg.exe',
                     r'C:\path_programs\ffmpeg.exe',
                     r'C:\ffmpeg\bin\ffmpeg.exe',
-                    r'C:\Users\Ferry Ardiansyah\ffmpeg\bin\ffmpeg.exe'
+                    r'C:\FFmpeg\bin\ffmpeg.exe',
+                    r'C:\Users\Ferry Ardiansyah\ffmpeg\bin\ffmpeg.exe',
+                    r'C:\ffmpeg\bin\ffmpeg.exe',
+                    r'C:\Program Files\FFmpeg\bin\ffmpeg.exe',
+                    r'C:\Program Files (x86)\FFmpeg\bin\ffmpeg.exe'
                 ]
                 for path in common_paths:
                     if os.path.exists(path):
                         ffmpeg_path = path
                         break
 
+            # Method 3: Check if ffmpeg command works
+            if not ffmpeg_path:
+                try:
+                    result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0:
+                        ffmpeg_path = 'ffmpeg'  # Use command name
+                        logging.info("FFmpeg found via command execution")
+                except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+                    pass
+
             if ffmpeg_path:
                 logging.info(f"Found FFmpeg at: {ffmpeg_path}")
+                # Verify FFmpeg works
+                try:
+                    test_result = subprocess.run([ffmpeg_path, '-version'], capture_output=True, timeout=3)
+                    if test_result.returncode != 0:
+                        logging.warning(f"FFmpeg at {ffmpeg_path} failed version check")
+                        ffmpeg_path = None
+                except Exception as e:
+                    logging.warning(f"FFmpeg test failed: {e}")
+                    ffmpeg_path = None
+
+            if ffmpeg_path:
                 # Use FFmpeg with the extracted URL
                 return discord.FFmpegPCMAudio(url,
                     executable=ffmpeg_path,
@@ -89,9 +119,13 @@ class MusicPlayer:
         try:
             source = self.create_audio_source(track['url'])
             if source is None:
-                logging.error("Failed to create audio source")
+                logging.error("Failed to create audio source - putting track back in queue")
                 self.is_playing = False
                 self.current_track = None
+                # Put the track back at the front of the queue
+                self.queue.queue.appendleft(track)
+                # Wait a bit before retrying to avoid infinite loops
+                await asyncio.sleep(2)
                 asyncio.create_task(self.play_next())
                 return
 
@@ -162,9 +196,13 @@ class MusicPlayer:
         try:
             source = self.create_audio_source(track['url'])
             if source is None:
-                logging.error("Failed to create audio source")
+                logging.error("Failed to create audio source - putting track back in queue")
                 self.is_playing = False
                 self.current_track = None
+                # Put the track back at the front of the queue
+                self.queue.queue.appendleft(track)
+                # Wait a bit before retrying to avoid infinite loops
+                await asyncio.sleep(2)
                 asyncio.create_task(self.play_next_auto())
                 return
 
