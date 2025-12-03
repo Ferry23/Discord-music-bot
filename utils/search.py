@@ -12,9 +12,7 @@ class MusicSearch:
     def is_spotify_url(url):
         return re.match(r'(https?://)?(open\.spotify\.com)/', url)
 
-    @staticmethod
-    def is_soundcloud_url(url):
-        return re.match(r'(https?://)?(soundcloud\.com)/', url)
+    # Removed SoundCloud support - focus on YouTube & Spotify only
 
     @staticmethod
     def extract_spotify_info(url):
@@ -54,28 +52,16 @@ class MusicSearch:
         if 'youtube.com' in url or 'youtu.be' in url:
             url = url.split('&')[0]  # Remove playlist and other parameters
 
-        # Different options for different platforms
-        if 'soundcloud.com' in url:
-            ydl_opts = {
-                'quiet': True,
-                'no_warnings': True,
-                'extract_flat': False,
-                'noplaylist': True,
-                'format': 'bestaudio[abr<=128]/best[abr<=128]',  # SoundCloud specific format
-                'ffmpeg_location': None,
-                'postprocessors': [],
-            }
-        else:
-            # YouTube and others
-            ydl_opts = {
-                'quiet': True,
-                'no_warnings': True,
-                'extract_flat': False,
-                'noplaylist': True,
-                'format': 'bestaudio[abr<=128]/best[abr<=128]',  # General audio format
-                'ffmpeg_location': None,
-                'postprocessors': [],
-            }
+        # Optimized options for YouTube & Spotify (converted to YouTube)
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': False,
+            'noplaylist': True,
+            'format': 'bestaudio[abr<=128]/best[abr<=128]',  # Audio format optimized for Discord
+            'ffmpeg_location': None,
+            'postprocessors': [],
+        }
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
@@ -102,7 +88,11 @@ class MusicSearch:
                     logging.error("Empty video URL extracted")
                     return None
 
-                logging.info(f"Extracted URL: {video_url[:100]}...")
+                logging.info(f"Extracted URL for {url[:50]}...: {video_url[:100]}...")
+                logging.info(f"Available formats: {len(info.get('formats', []))}")
+                if 'formats' in info and info['formats']:
+                    for i, fmt in enumerate(info['formats'][:3]):  # Log first 3 formats
+                        logging.info(f"Format {i}: {fmt.get('format_id', 'N/A')} - {fmt.get('ext', 'N/A')} - {fmt.get('abr', 'N/A')}kbps")
 
                 return {
                     'url': video_url,
@@ -121,18 +111,15 @@ class MusicSearch:
         if cls.is_youtube_url(query_or_url):
             logging.info("Detected YouTube URL")
             return cls.get_video_info(query_or_url)
-        elif cls.is_soundcloud_url(query_or_url):
-            logging.info("Detected SoundCloud URL")
-            return cls.get_video_info(query_or_url)
         elif cls.is_spotify_url(query_or_url):
-            logging.info("Detected Spotify URL")
+            logging.info("Detected Spotify URL - converting to YouTube search")
             # For Spotify, treat as search query then extract full info
             search_result = cls.search_youtube(query_or_url)
             if search_result and search_result['url']:
                 return cls.get_video_info(search_result['url'])
             return search_result
         else:
-            logging.info("Detected search query")
+            logging.info("Detected search query - using YouTube")
             # For search queries, search then extract full info
             search_result = cls.search_youtube(query_or_url)
             if search_result and search_result['url']:

@@ -9,7 +9,7 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
 ## ✨ Fitur Utama
 
 ### 🎶 Musik Streaming
-- **Multi-platform support**: YouTube, Spotify, SoundCloud
+- **Multi-platform support**: YouTube, Spotify (converted to YouTube)
 - **Streaming langsung**: Tidak download file, hemat storage
 - **High quality audio**: Menggunakan yt-dlp + FFmpeg
 
