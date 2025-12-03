@@ -35,6 +35,11 @@ class UtilsCommandsCog(commands.Cog):
         embed = discord.Embed(title="⏰ Uptime", description=uptime_str, color=0xe67e22)
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def help(self, ctx):
+        embed = EmbedBuilder.help_embed()
+        await ctx.send(embed=embed)
+
 
 async def setup(bot):
     await bot.add_cog(UtilsCommandsCog(bot))

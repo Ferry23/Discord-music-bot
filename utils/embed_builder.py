@@ -45,19 +45,25 @@ class EmbedBuilder:
     def help_embed():
         embed = discord.Embed(
             title="🎵 Music Bot Help",
-            description="Available commands:",
+            description="Berikut adalah cara penggunaan bot musik ini:",
             color=0xe67e22
         )
         embed.add_field(
-            name="Music Commands",
-            value="!play <song/link>\n!skip\n!pause\n!resume\n!stop\n!queue\n!volume <1-100>\n!shuffle\n!repeat <off/one/all>",
+            name="🎶 Perintah Musik",
+            value="`!play <lagu/link>` - Putar lagu\n`!queue [halaman]` - Lihat antrian\n`!skip` - Lewati lagu\n`!pause` - Jeda\n`!resume` - Lanjutkan\n`!stop` - Hentikan dan hapus antrian\n`!volume <1-100>` - Atur volume\n`!shuffle` - Acak antrian\n`!repeat <off/one/all>` - Set ulang\n`!nowplaying` - Lihat lagu yang sedang diputar\n`!history` - Riwayat lagu\n`!stay` - Mode 24/7",
             inline=False
         )
         embed.add_field(
-            name="Other Commands",
-            value="!lirik [song]\n!playlist create <name>\n!playlist add <name> <song>\n!playlist play <name>\n!history\n!ping\n!botinfo",
+            name="📋 Perintah Playlist",
+            value="`!playlist create <nama>` - Buat playlist\n`!playlist add <nama> <lagu>` - Tambah lagu ke playlist\n`!playlist play <nama>` - Putar playlist\n`!playlist list` - Lihat semua playlist\n`!playlist show <nama>` - Lihat isi playlist\n`!playlist delete <nama>` - Hapus playlist",
             inline=False
         )
+        embed.add_field(
+            name="📝 Perintah Lain",
+            value="`!lirik [lagu]` - Cari lirik (jika tidak ada, dari lagu sekarang)\n`!ping` - Cek latency bot\n`!botinfo` - Info bot\n`!uptime` - Waktu aktif bot\n`!help` - Tampilkan bantuan ini",
+            inline=False
+        )
+        embed.set_footer(text="Bot musik Discord - Gunakan prefix !")
         return embed
 
     @staticmethod
