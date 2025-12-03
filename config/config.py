@@ -1,8 +1,11 @@
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class Config:
-    DISCORD_TOKEN = os.getenv('')
-    GENIUS_ACCESS_TOKEN = os.getenv('')
+    DISCORD_TOKEN = os.getenv('DISCORD_TOKEN')
+    GENIUS_ACCESS_TOKEN = os.getenv('GENIUS_ACCESS_TOKEN')
     COMMAND_PREFIX = '!'
     IDLE_TIMEOUT = 300  # 5 minutes in seconds
     DEFAULT_VOLUME = 50  # 0-100
