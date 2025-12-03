@@ -5,5 +5,9 @@ lyricsgenius>=3.0.0
 python-dotenv>=1.0.0
 asyncio
 logging
-psutil
 PyNaCl
+
+# System dependencies (not installed via pip):
+# - FFmpeg (required for audio playback)
+#   Windows: Install via Chocolatey: choco install ffmpeg
+#   Or download from: https://ffmpeg.org/download.html

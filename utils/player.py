@@ -20,7 +20,27 @@ class MusicPlayer:
     def create_audio_source(self, url):
         try:
             import shutil
+            import os
+
+            # Try multiple ways to find FFmpeg
+            ffmpeg_path = None
+
+            # Method 1: Check PATH
             ffmpeg_path = shutil.which('ffmpeg')
+
+            # Method 2: Check common installation locations
+            if not ffmpeg_path:
+                common_paths = [
+                    r'C:\ProgramData\chocolatey\bin\ffmpeg.exe',
+                    r'C:\path_programs\ffmpeg.exe',
+                    r'C:\ffmpeg\bin\ffmpeg.exe',
+                    r'C:\Users\Ferry Ardiansyah\ffmpeg\bin\ffmpeg.exe'
+                ]
+                for path in common_paths:
+                    if os.path.exists(path):
+                        ffmpeg_path = path
+                        break
+
             if ffmpeg_path:
                 logging.info(f"Found FFmpeg at: {ffmpeg_path}")
                 # Use FFmpeg with the extracted URL
@@ -29,10 +49,11 @@ class MusicPlayer:
                     before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
                     options='-vn -f s16le -ar 48000 -ac 2')
             else:
-                logging.warning("FFmpeg not found in PATH, trying default")
+                logging.warning("FFmpeg not found in PATH or common locations, trying default")
+                # Try default FFmpeg (might work if it's in system PATH during runtime)
                 return discord.FFmpegPCMAudio(url,
                     before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-                    options='-vn')
+                    options='-vn -f s16le -ar 48000 -ac 2')
         except Exception as e:
             logging.error(f"Error creating audio source: {e}")
             return None

@@ -55,7 +55,10 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
    ```
 
 3. **Install FFmpeg** (wajib untuk audio streaming):
-   - **Windows**: Download dari [ffmpeg.org](https://ffmpeg.org/download.html) dan tambahkan ke PATH
+   - **Windows**:
+     - Via Chocolatey: `choco install ffmpeg`
+     - Atau download dari [ffmpeg.org](https://ffmpeg.org/download.html) dan tambahkan ke PATH
+     - Atau download build essentials dari [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) dan extract ke folder yang ada di PATH
    - **Linux**: `sudo apt install ffmpeg`
    - **Mac**: `brew install ffmpeg`
 
