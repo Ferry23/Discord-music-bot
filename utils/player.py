@@ -254,17 +254,26 @@ class MusicPlayer:
             # Send Now Playing embed automatically for auto-play
             try:
                 from utils.embed_builder import EmbedBuilder
-                # Find the bot instance and music cog
-                for cog_name, cog in self.voice_client.guild.bot.cogs.items():
-                    if cog_name == 'MusicCog' and hasattr(cog, 'last_channel'):
-                        if self.voice_client.guild.id in cog.last_channel:
-                            channel = cog.last_channel[self.voice_client.guild.id]
-                            embed = EmbedBuilder.now_playing(
-                                track, None,  # No specific requester for auto-play
-                                self.volume, self.queue.repeat_mode, self.queue.shuffled
-                            )
-                            asyncio.create_task(channel.send(embed=embed))
-                        break
+                # Find the bot instance and music cog more reliably
+                bot = None
+                music_cog = None
+
+                # Try to get bot from voice client
+                if hasattr(self.voice_client, 'guild') and hasattr(self.voice_client.guild, 'bot'):
+                    bot = self.voice_client.guild.bot
+                    music_cog = bot.get_cog('MusicCog')
+
+                if music_cog and hasattr(music_cog, 'last_channel'):
+                    guild_id = self.voice_client.guild.id
+                    if guild_id in music_cog.last_channel:
+                        channel = music_cog.last_channel[guild_id]
+                        embed = EmbedBuilder.now_playing(
+                            track, None,  # No specific requester for auto-play
+                            self.volume, self.queue.repeat_mode, self.queue.shuffled
+                        )
+                        # Send synchronously to avoid issues
+                        asyncio.create_task(channel.send(embed=embed))
+                        logging.info(f"Sent auto Now Playing embed for: {track['title']}")
             except Exception as e:
                 logging.warning(f"Failed to send auto Now Playing embed: {e}")
 
