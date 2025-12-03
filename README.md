@@ -54,7 +54,7 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
    DISCORD_TOKEN=your_discord_bot_token
    GENIUS_ACCESS_TOKEN=your_genius_token
    ```
-4. **Bot siap digunakan!** FFmpeg otomatis terinstall via `nixpacks.toml`
+4. **Bot siap digunakan!** FFmpeg otomatis terinstall via `Dockerfile` atau `nixpacks.toml`
 
 ### Opsi 2: Local Development
 
