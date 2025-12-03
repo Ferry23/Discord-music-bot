@@ -93,11 +93,37 @@ class MusicPlayer:
                 except Exception as e:
                     logging.warning(f"FFmpeg test exception: {e}")
 
-            # Last resort: try without explicit executable
+            # Last resort: try without explicit executable (should work if FFmpeg is in PATH)
             logging.warning("FFmpeg not found, trying system default")
-            return discord.FFmpegPCMAudio(url,
-                before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-                options='-vn -f s16le -ar 48000 -ac 2')
+            try:
+                # Try with default FFmpeg (no executable specified)
+                return discord.FFmpegPCMAudio(url,
+                    before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                    options='-vn -f s16le -ar 48000 -ac 2')
+            except Exception as e:
+                logging.error(f"System FFmpeg also failed: {e}")
+
+                # Ultimate fallback: try yt-dlp's FFmpeg integration
+                try:
+                    logging.info("Trying yt-dlp FFmpeg integration")
+                    import yt_dlp
+                    ydl_opts = {
+                        'format': 'bestaudio/best',
+                        'extractaudio': True,
+                        'audioformat': 'mp3',
+                        'outtmpl': '-',
+                        'quiet': True,
+                    }
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(url, download=False)
+                        if 'url' in info:
+                            return discord.FFmpegPCMAudio(info['url'],
+                                before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                                options='-vn -f s16le -ar 48000 -ac 2')
+                except Exception as e2:
+                    logging.error(f"yt-dlp fallback also failed: {e2}")
+
+            return None
 
         except Exception as e:
             logging.error(f"Error creating audio source: {e}")

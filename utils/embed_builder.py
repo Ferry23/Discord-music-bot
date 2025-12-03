@@ -60,7 +60,7 @@ class EmbedBuilder:
         )
         embed.add_field(
             name="📝 Perintah Lain",
-            value="`!lirik [lagu]` - Cari lirik (jika tidak ada, dari lagu sekarang)\n`!ping` - Cek latency bot\n`!botinfo` - Info bot\n`!uptime` - Waktu aktif bot\n`!help` - Tampilkan bantuan ini",
+            value="`!lirik [lagu]` - Cari lirik (jika tidak ada, dari lagu sekarang)\n`!ping` - Cek latency bot\n`!botinfo` - Info bot\n`!uptime` - Waktu aktif bot\n`!ffmpegtest` - Test FFmpeg availability\n`!help` - Tampilkan bantuan ini",
             inline=False
         )
         embed.set_footer(text="Bot musik Discord - Gunakan prefix !")

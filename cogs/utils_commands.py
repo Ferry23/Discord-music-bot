@@ -39,6 +39,40 @@ class UtilsCommandsCog(commands.Cog):
         embed = EmbedBuilder.help_embed()
         await ctx.send(embed=embed)
 
+    @commands.command()
+    async def ffmpegtest(self, ctx):
+        """Test FFmpeg availability"""
+        import subprocess
+        import shutil
+        import os
+
+        response = "**FFmpeg Test Results:**\n\n"
+
+        # Check PATH
+        ffmpeg_in_path = shutil.which('ffmpeg')
+        response += f"FFmpeg in PATH: `{ffmpeg_in_path or 'Not found'}`\n"
+
+        # Check environment variable
+        ffmpeg_env = os.environ.get('FFMPEG_PATH')
+        response += f"FFMPEG_PATH env: `{ffmpeg_env or 'Not set'}`\n"
+
+        # Test execution
+        try:
+            if ffmpeg_in_path or ffmpeg_env:
+                test_path = ffmpeg_env or ffmpeg_in_path
+                result = subprocess.run([test_path, '-version'], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    version_line = result.stdout.split('\n')[0] if result.stdout else 'Unknown version'
+                    response += f"FFmpeg test: ✅ Working\nVersion: `{version_line}`"
+                else:
+                    response += f"FFmpeg test: ❌ Failed (exit code {result.returncode})"
+            else:
+                response += "FFmpeg test: ❌ Not found in PATH or env"
+        except Exception as e:
+            response += f"FFmpeg test: ❌ Exception - {e}"
+
+        await ctx.send(response)
+
 
 async def setup(bot):
     await bot.add_cog(UtilsCommandsCog(bot))
