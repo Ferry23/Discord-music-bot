@@ -12,7 +12,7 @@ Config.validate()
 # Create bot instance
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix=Config.COMMAND_PREFIX, intents=intents)
+bot = commands.Bot(command_prefix=Config.COMMAND_PREFIX, intents=intents, help_command=None)
 
 @bot.event
 async def on_ready():
