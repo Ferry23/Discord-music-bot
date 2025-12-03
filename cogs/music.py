@@ -15,12 +15,20 @@ class MusicCog(commands.Cog):
         self.last_channel = {}  # guild_id -> channel
 
     def get_player(self, guild):
+        voice_client = guild.voice_client
+        if not voice_client:
+            return None
+
         if guild.id not in self.players:
-            voice_client = guild.voice_client
-            if not voice_client:
-                return None
             queue = MusicQueue()
             self.players[guild.id] = MusicPlayer(voice_client, queue)
+        else:
+            # Update voice client if it changed (e.g., after reconnection)
+            existing_player = self.players[guild.id]
+            if existing_player.voice_client != voice_client:
+                logging.info(f"Updating voice client for guild {guild.id}")
+                existing_player.voice_client = voice_client
+
         return self.players[guild.id]
 
     @commands.command()
@@ -32,9 +40,20 @@ class MusicCog(commands.Cog):
         voice_channel = ctx.author.voice.channel
         if not ctx.guild.voice_client:
             try:
-                await voice_channel.connect()
-                # Wait a bit for connection to establish
-                await asyncio.sleep(0.5)
+                logging.info(f"Connecting to voice channel: {voice_channel.name}")
+                voice_client = await voice_channel.connect()
+                logging.info(f"Voice client created: {voice_client}")
+
+                # Wait for connection to be ready
+                await asyncio.sleep(1.0)
+
+                # Verify connection
+                if not ctx.guild.voice_client or not ctx.guild.voice_client.is_connected():
+                    logging.error("Voice client not connected after waiting")
+                    await ctx.send("Failed to establish voice connection. Please try again.")
+                    return
+
+                logging.info("Voice connection established successfully")
             except Exception as e:
                 logging.error(f"Failed to connect to voice channel: {e}")
                 await ctx.send("Failed to connect to voice channel. Please try again.")
@@ -45,8 +64,11 @@ class MusicCog(commands.Cog):
 
         player = self.get_player(ctx.guild)
         if not player:
+            logging.error("Failed to get/create player after voice connection")
             await ctx.send("Failed to initialize music player. Please try again.")
             return
+
+        logging.info(f"Player initialized successfully: {player}")
 
         track = MusicSearch.search(query)
         if not track:
