@@ -6,7 +6,7 @@ import logging
 class MusicSearch:
     @staticmethod
     def is_youtube_url(url):
-        return re.match(r'(https?://)?(www\.)?(youtube\.com|youtu\.be)/', url)
+        return re.match(r'(https?://)?(www\.|music\.)?(youtube\.com|youtu\.be)/', url)
 
     @staticmethod
     def is_spotify_url(url):
@@ -25,6 +25,7 @@ class MusicSearch:
 
     @staticmethod
     def search_youtube(query):
+        # Try youtubesearchpython first
         try:
             videos_search = VideosSearch(query, limit=1)
             result = videos_search.result()
@@ -37,7 +38,28 @@ class MusicSearch:
                     'thumbnail': video['thumbnails'][0]['url'] if video['thumbnails'] else None
                 }
         except Exception as e:
-            logging.error(f"Error searching YouTube: {e}")
+            logging.warning(f"YouTube search failed, trying yt-dlp fallback: {e}")
+
+        # Fallback to yt-dlp search
+        try:
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'extract_flat': True,
+                'default_search': 'ytsearch1',
+            }
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(f"ytsearch1:{query}", download=False)
+                if info['entries']:
+                    entry = info['entries'][0]
+                    return {
+                        'url': entry['url'],
+                        'title': entry['title'],
+                        'duration': entry.get('duration', 0),
+                        'thumbnail': entry.get('thumbnail', '')
+                    }
+        except Exception as e:
+            logging.error(f"yt-dlp search fallback also failed: {e}")
         return None
 
     @staticmethod
