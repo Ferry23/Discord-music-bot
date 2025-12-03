@@ -65,22 +65,9 @@ class MusicCog(commands.Cog):
             await ctx.send("No track is playing.")
             return
 
-        if player.can_skip(ctx.author):
-            player.voice_client.stop()
-            await ctx.send("Skipped current track.")
-        else:
-            # Vote skip
-            if player.vote_skip(ctx.author):
-                voice_members = [m for m in ctx.author.voice.channel.members if not m.bot]
-                if player.should_skip_vote(len(voice_members)):
-                    player.voice_client.stop()
-                    await ctx.send("Skipped by vote.")
-                else:
-                    votes = len(player.skip_votes)
-                    needed = int(len(voice_members) * 0.5) + 1
-                    await ctx.send(f"Vote skip: {votes}/{needed}")
-            else:
-                await ctx.send("You already voted to skip.")
+        # Anyone can skip directly
+        player.voice_client.stop()
+        await ctx.send("Skipped current track.")
 
     @commands.command()
     async def pause(self, ctx):
@@ -150,16 +137,6 @@ class MusicCog(commands.Cog):
             status = "enabled" if player.stay_247 else "disabled"
             await ctx.send(f"24/7 mode {status}")
 
-    @commands.command()
-    async def dj(self, ctx, role: discord.Role = None):
-        player = self.get_player(ctx.guild)
-        if player:
-            if role:
-                player.set_dj_role(role.id)
-                await ctx.send(f"DJ role set to {role.name}")
-            else:
-                player.set_dj_role(None)
-                await ctx.send("DJ role removed")
 
 async def setup(bot):
     await bot.add_cog(MusicCog(bot))

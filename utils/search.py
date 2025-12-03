@@ -1,5 +1,5 @@
-import yt_dlp
-from youtubesearchpython import VideosSearch
+import yt_dlp  # type: ignore
+from youtubesearchpython import VideosSearch  # type: ignore
 import re
 import logging
 
@@ -25,58 +25,77 @@ class MusicSearch:
 
     @staticmethod
     def search_youtube(query):
-        # Try youtubesearchpython first
-        try:
-            videos_search = VideosSearch(query, limit=1)
-            result = videos_search.result()
-            if result['result']:
-                video = result['result'][0]
-                return {
-                    'url': f"https://www.youtube.com/watch?v={video['id']}",
-                    'title': video['title'],
-                    'duration': video['duration'],
-                    'thumbnail': video['thumbnails'][0]['url'] if video['thumbnails'] else None
-                }
-        except Exception as e:
-            logging.warning(f"YouTube search failed, trying yt-dlp fallback: {e}")
-
-        # Fallback to yt-dlp search
+        # Use yt-dlp search directly (more reliable)
         try:
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
                 'extract_flat': True,
                 'default_search': 'ytsearch1',
+                'noplaylist': True,
             }
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(f"ytsearch1:{query}", download=False)
-                if info['entries']:
+                if info and 'entries' in info and info['entries']:
                     entry = info['entries'][0]
                     return {
-                        'url': entry['url'],
-                        'title': entry['title'],
+                        'url': entry.get('url', entry.get('webpage_url', '')),
+                        'title': entry.get('title', 'Unknown Title'),
                         'duration': entry.get('duration', 0),
                         'thumbnail': entry.get('thumbnail', '')
                     }
         except Exception as e:
-            logging.error(f"yt-dlp search fallback also failed: {e}")
+            logging.error(f"YouTube search failed: {e}")
         return None
 
     @staticmethod
     def get_video_info(url):
+        # Clean URL from playlist parameters to avoid playlist extraction
+        if 'youtube.com' in url or 'youtu.be' in url:
+            url = url.split('&')[0]  # Remove playlist and other parameters
+
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
+            'noplaylist': True,  # Don't extract playlists
+            'format': 'bestaudio[abr<=128][ext=webm]/bestaudio[abr<=128]/best[abr<=128]',  # Prioritize webm for Discord
+            'ffmpeg_location': None,  # Disable FFmpeg post-processing
+            'postprocessors': [],  # Disable all post-processors
         }
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
+
+                # For audio, we need the actual stream URL
+                # yt-dlp should give us the direct URL after extraction
+                if 'url' in info and info['url']:
+                    video_url = info['url']
+                elif 'formats' in info and info['formats']:
+                    # Find best audio format
+                    audio_formats = [f for f in info['formats'] if f.get('acodec') != 'none']
+                    if audio_formats:
+                        # Sort by quality (prefer higher bitrate)
+                        audio_formats.sort(key=lambda x: x.get('abr', 0), reverse=True)
+                        video_url = audio_formats[0].get('url', '')
+                    else:
+                        # Fallback to first format
+                        video_url = info['formats'][0].get('url', '')
+                else:
+                    logging.error(f"No URL found in info dict: {list(info.keys())}")
+                    return None
+
+                if not video_url:
+                    logging.error("Empty video URL extracted")
+                    return None
+
+                logging.info(f"Extracted URL: {video_url[:100]}...")
+
                 return {
-                    'url': info['url'],
-                    'title': info['title'],
-                    'duration': info['duration'],
-                    'thumbnail': info['thumbnail']
+                    'url': video_url,
+                    'title': info.get('title', 'Unknown Title'),
+                    'duration': info.get('duration', 0),
+                    'thumbnail': info.get('thumbnail', '')
                 }
         except Exception as e:
             logging.error(f"Error extracting video info: {e}")
@@ -85,11 +104,17 @@ class MusicSearch:
     @classmethod
     def search(cls, query_or_url):
         if cls.is_youtube_url(query_or_url) or cls.is_soundcloud_url(query_or_url):
+            # For direct URLs, extract full info
             return cls.get_video_info(query_or_url)
         elif cls.is_spotify_url(query_or_url):
-            # For Spotify, try to get title from URL or assume it's a search
-            # Simplified: treat as search query
-            # In advanced, use spotipy to get track info
-            return cls.search_youtube(query_or_url)  # Placeholder
+            # For Spotify, treat as search query then extract full info
+            search_result = cls.search_youtube(query_or_url)
+            if search_result and search_result['url']:
+                return cls.get_video_info(search_result['url'])
+            return search_result
         else:
-            return cls.search_youtube(query_or_url)
+            # For search queries, search then extract full info
+            search_result = cls.search_youtube(query_or_url)
+            if search_result and search_result['url']:
+                return cls.get_video_info(search_result['url'])
+            return search_result

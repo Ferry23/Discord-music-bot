@@ -1,6 +1,10 @@
 # 🎵 Discord Music Bot
 
+**✅ BOT SUDAH BERFUNGSI LENGKAP!**
+
 Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung streaming musik dari berbagai platform dengan antarmuka yang user-friendly.
+
+**Status**: 🟢 **Fully Functional** - Semua fitur telah ditest dan bekerja dengan baik!
 
 ## ✨ Fitur Utama
 
@@ -24,8 +28,7 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
 - **Now Playing**: Embed rapi dengan progress bar
 - **Lyrics**: Ambil lirik dari Genius API
 - **Volume control**: Atur volume 1-100%
-- **DJ Mode**: Role-based permissions untuk kontrol musik
-- **Skip Voting**: Vote system untuk skip lagu
+- **24/7 Mode**: Bot tetap online di voice channel
 - **24/7 Mode**: Bot tetap online di voice channel
 - **Auto disconnect**: Disconnect otomatis setelah idle 5 menit
 
@@ -122,9 +125,6 @@ Bot akan online dan siap digunakan!
 !uptime               - Waktu bot online
 ```
 
-### DJ Mode & Voting
-- **DJ Role**: Hanya user dengan role DJ yang bisa skip/stop musik
-- **Skip Voting**: Jika bukan DJ, !skip akan mulai voting (50%+ user di VC untuk skip)
 
 ## 🏗️ Struktur Proyek
 

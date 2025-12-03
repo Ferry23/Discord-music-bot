@@ -1,5 +1,5 @@
 import discord
-import yt_dlp
+import yt_dlp  # type: ignore
 import asyncio
 import logging
 from config.config import Config
@@ -14,21 +14,34 @@ class MusicPlayer:
         self.idle_task = None
         self.volume = Config.DEFAULT_VOLUME / 100.0
         self.stay_247 = False
-        self.dj_role_id = None
         self.skip_votes = set()
         self.auto_related = True
 
     def create_audio_source(self, url):
-        ydl_opts = {
-            'format': 'bestaudio/best',
-            'outtmpl': '-',
-            'quiet': True,
-            'no_warnings': True,
-        }
-        return discord.FFmpegPCMAudio(url, before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5', options='-vn')
+        try:
+            import shutil
+            ffmpeg_path = shutil.which('ffmpeg')
+            if ffmpeg_path:
+                logging.info(f"Found FFmpeg at: {ffmpeg_path}")
+                # Use FFmpeg with the extracted URL
+                return discord.FFmpegPCMAudio(url,
+                    executable=ffmpeg_path,
+                    before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                    options='-vn -f s16le -ar 48000 -ac 2')
+            else:
+                logging.warning("FFmpeg not found in PATH, trying default")
+                return discord.FFmpegPCMAudio(url,
+                    before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                    options='-vn')
+        except Exception as e:
+            logging.error(f"Error creating audio source: {e}")
+            return None
 
     async def play_next(self):
+        logging.info(f"Play next called. Queue size: {self.queue.size()}, is_playing: {self.is_playing}")
+
         if self.queue.is_empty():
+            logging.info("Queue is empty")
             if self.auto_related and self.current_track:
                 # Add related songs
                 related_query = f"{self.current_track['title']} related songs"
@@ -50,12 +63,27 @@ class MusicPlayer:
         self.is_playing = True
         self.skip_votes.clear()
 
-        source = self.create_audio_source(track['url'])
-        if hasattr(source, 'volume'):
-            source.volume = self.volume
-        self.voice_client.play(source, after=self.after_play)
+        logging.info(f"Attempting to play: {track['title']} - URL: {track['url'][:50]}...")
 
-        logging.info(f"Now playing: {track['title']}")
+        try:
+            source = self.create_audio_source(track['url'])
+            if source is None:
+                logging.error("Failed to create audio source")
+                self.is_playing = False
+                self.current_track = None
+                asyncio.create_task(self.play_next())
+                return
+
+            if hasattr(source, 'volume'):
+                source.volume = self.volume
+            self.voice_client.play(source, after=self.after_play)
+            logging.info(f"Now playing: {track['title']}")
+        except Exception as e:
+            logging.error(f"Error playing track: {e}")
+            self.is_playing = False
+            self.current_track = None
+            # Try next track
+            asyncio.create_task(self.play_next())
 
     def after_play(self, error):
         if error:
@@ -108,13 +136,6 @@ class MusicPlayer:
             if not self.is_playing and self.queue.is_empty():
                 asyncio.create_task(self.start_idle_timer())
 
-    def set_dj_role(self, role_id):
-        self.dj_role_id = role_id
-
-    def can_skip(self, member):
-        if self.dj_role_id:
-            return any(role.id == self.dj_role_id for role in member.roles)
-        return True
 
     def vote_skip(self, member):
         if member.id in self.skip_votes:
