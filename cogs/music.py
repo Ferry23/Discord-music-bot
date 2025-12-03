@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import logging
+import asyncio
 from utils.search import MusicSearch
 from utils.queue import MusicQueue
 from utils.player import MusicPlayer
@@ -30,13 +31,21 @@ class MusicCog(commands.Cog):
 
         voice_channel = ctx.author.voice.channel
         if not ctx.guild.voice_client:
-            await voice_channel.connect()
+            try:
+                await voice_channel.connect()
+                # Wait a bit for connection to establish
+                await asyncio.sleep(0.5)
+            except Exception as e:
+                logging.error(f"Failed to connect to voice channel: {e}")
+                await ctx.send("Failed to connect to voice channel. Please try again.")
+                return
 
         # Store the channel for auto Now Playing messages
         self.last_channel[ctx.guild.id] = ctx.channel
 
         player = self.get_player(ctx.guild)
         if not player:
+            await ctx.send("Failed to initialize music player. Please try again.")
             return
 
         track = MusicSearch.search(query)
