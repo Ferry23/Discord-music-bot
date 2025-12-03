@@ -16,9 +16,7 @@ class MusicSearch:
 
     @staticmethod
     def extract_spotify_info(url):
-        # Simple extraction, in real app might need better parsing
-        # For simplicity, assume it's a track and extract from yt-dlp if possible
-        # But yt-dlp can handle Spotify with cookies, but for now, return None and handle as search
+        # Simple extraction - just return None to use URL as search query
         return None
 
     @staticmethod
@@ -113,8 +111,19 @@ class MusicSearch:
             return cls.get_video_info(query_or_url)
         elif cls.is_spotify_url(query_or_url):
             logging.info("Detected Spotify URL - converting to YouTube search")
-            # For Spotify, treat as search query then extract full info
-            search_result = cls.search_youtube(query_or_url)
+            # Extract track ID from Spotify URL for better search
+            track_id = None
+            if 'track/' in query_or_url:
+                track_id = query_or_url.split('track/')[1].split('?')[0]
+
+            # Create a better search query
+            if track_id:
+                search_query = f"spotify track {track_id}"
+            else:
+                search_query = query_or_url  # fallback to full URL
+
+            logging.info(f"Searching YouTube with query: {search_query}")
+            search_result = cls.search_youtube(search_query)
             if search_result and search_result['url']:
                 return cls.get_video_info(search_result['url'])
             return search_result

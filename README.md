@@ -12,12 +12,14 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
 - **Multi-platform support**: YouTube, Spotify (converted to YouTube)
 - **Streaming langsung**: Tidak download file, hemat storage
 - **High quality audio**: Menggunakan yt-dlp + FFmpeg
+- **Auto Now Playing**: Embed muncul otomatis setiap lagu baru
 
 ### 📋 Queue Management
 - **Queue lengkap**: Add, remove, view dengan pagination
 - **Shuffle & Repeat**: Mode shuffle dan repeat (off/one/all)
 - **History**: Riwayat lagu yang pernah diputar
 - **Auto-related**: Otomatis add lagu terkait jika queue kosong
+- **Skip voting**: Vote system untuk skip lagu
 
 ### 📝 Playlist Custom
 - **Server playlists**: Playlist per server yang persistent
@@ -25,11 +27,11 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
 - **JSON storage**: Data tersimpan dalam file JSON
 
 ### 🎤 Advanced Features
-- **Now Playing**: Embed rapi dengan progress bar
-- **Lyrics**: Ambil lirik dari Genius API
-- **Volume control**: Atur volume 1-100%
-- **24/7 Mode**: Bot tetap online di voice channel
-- **24/7 Mode**: Bot tetap online di voice channel
+- **Now Playing**: Embed rapi dengan progress bar, volume, repeat status
+- **Lyrics**: Ambil lirik dari Genius API (!lirik)
+- **Volume control**: Atur volume 1-100% (!volume)
+- **24/7 Mode**: Bot tetap online di voice channel (!stay)
+- **DJ Mode**: Role-based music control (!dj)
 - **Auto disconnect**: Disconnect otomatis setelah idle 5 menit
 
 ### 🤖 Bot Features
@@ -75,6 +77,45 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
    # Edit .env dan isi token
    DISCORD_TOKEN=your_discord_bot_token_here
    GENIUS_ACCESS_TOKEN=your_genius_access_token_here
+
+4. **Jalankan bot**:
+   ```bash
+   python bot.py
+   ```
+
+## 🎮 Commands Lengkap
+
+### 🎵 Musik Commands
+- `!play <judul/link>` - Putar musik dari YouTube/Spotify
+- `!skip` - Skip lagu (dengan vote system)
+- `!pause` - Pause musik
+- `!resume` - Resume musik
+- `!stop` - Stop dan clear queue
+- `!queue [page]` - Lihat queue dengan pagination
+- `!volume <1-100>` - Atur volume
+- `!shuffle` - Toggle shuffle mode
+- `!repeat <off/one/all>` - Set repeat mode
+- `!nowplaying` - Lihat lagu yang sedang diputar
+- `!history` - Lihat riwayat lagu
+
+### 📝 Playlist Commands
+- `!playlist create <nama>` - Buat playlist baru
+- `!playlist add <nama> <lagu>` - Tambah lagu ke playlist
+- `!playlist play <nama>` - Putar seluruh playlist
+- `!playlist list` - Lihat semua playlist
+- `!playlist show <nama>` - Lihat isi playlist
+- `!playlist delete <nama>` - Hapus playlist
+
+### 🎤 Lirik & Advanced
+- `!lirik [judul]` - Ambil lirik lagu
+- `!stay` - Toggle 24/7 mode
+- `!dj <@role>` - Set DJ role untuk kontrol musik
+
+### 🤖 Utility Commands
+- `!ping` - Cek latency bot
+- `!botinfo` - Info bot lengkap
+- `!uptime` - Waktu bot online
+- `!help` - Bantuan commands
    ```
 
 ### Menjalankan Bot

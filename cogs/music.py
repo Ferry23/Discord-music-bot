@@ -11,6 +11,7 @@ class MusicCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.players = {}
+        self.last_channel = {}  # guild_id -> channel
 
     def get_player(self, guild):
         if guild.id not in self.players:
@@ -31,6 +32,9 @@ class MusicCog(commands.Cog):
         if not ctx.guild.voice_client:
             await voice_channel.connect()
 
+        # Store the channel for auto Now Playing messages
+        self.last_channel[ctx.guild.id] = ctx.channel
+
         player = self.get_player(ctx.guild)
         if not player:
             return
@@ -45,7 +49,7 @@ class MusicCog(commands.Cog):
 
         if not player.is_playing:
             player.cancel_idle_timer()
-            await player.play_next()
+            await player.play_next(ctx)  # Pass ctx for Now Playing
 
     @commands.command()
     async def queue(self, ctx, page: int = 1):

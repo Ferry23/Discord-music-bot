@@ -37,7 +37,7 @@ class MusicPlayer:
             logging.error(f"Error creating audio source: {e}")
             return None
 
-    async def play_next(self):
+    async def play_next(self, ctx=None):
         logging.info(f"Play next called. Queue size: {self.queue.size()}, is_playing: {self.is_playing}")
 
         if self.queue.is_empty():
@@ -77,6 +77,22 @@ class MusicPlayer:
             if hasattr(source, 'volume'):
                 source.volume = self.volume
             self.voice_client.play(source, after=self.after_play)
+
+            # Send Now Playing embed automatically
+            if ctx and ctx.bot:
+                try:
+                    from utils.embed_builder import EmbedBuilder
+                    music_cog = ctx.bot.get_cog('MusicCog')
+                    if music_cog and ctx.guild.id in music_cog.last_channel:
+                        channel = music_cog.last_channel[ctx.guild.id]
+                        embed = EmbedBuilder.now_playing(
+                            track, ctx.author,
+                            self.volume, self.queue.repeat_mode, self.queue.shuffled
+                        )
+                        asyncio.create_task(channel.send(embed=embed))
+                except Exception as e:
+                    logging.warning(f"Failed to send Now Playing embed: {e}")
+
             logging.info(f"Now playing: {track['title']}")
         except Exception as e:
             logging.error(f"Error playing track: {e}")
@@ -90,7 +106,75 @@ class MusicPlayer:
             logging.error(f"Playback error: {error}")
         self.is_playing = False
         self.current_track = None
-        asyncio.run_coroutine_threadsafe(self.play_next(), self.voice_client.loop)
+        # Continue to next track automatically
+        asyncio.run_coroutine_threadsafe(self.play_next_auto(), self.voice_client.loop)
+
+    async def play_next_auto(self):
+        """Play next track automatically (called from after_play)"""
+        logging.info("Auto-playing next track")
+
+        if self.queue.is_empty():
+            logging.info("Queue is empty")
+            if self.auto_related and self.current_track:
+                # Add related songs
+                related_query = f"{self.current_track['title']} related songs"
+                related_track = MusicSearch.search(related_query)
+                if related_track:
+                    self.queue.add_track(related_track)
+                    logging.info(f"Added related song: {related_track['title']}")
+                else:
+                    if not self.stay_247:
+                        await self.start_idle_timer()
+                    return
+            else:
+                if not self.stay_247:
+                    await self.start_idle_timer()
+                return
+
+        track = self.queue.get_next()
+        self.current_track = track
+        self.is_playing = True
+        self.skip_votes.clear()
+
+        logging.info(f"Auto-playing: {track['title']} - URL: {track['url'][:50]}...")
+
+        try:
+            source = self.create_audio_source(track['url'])
+            if source is None:
+                logging.error("Failed to create audio source")
+                self.is_playing = False
+                self.current_track = None
+                asyncio.create_task(self.play_next_auto())
+                return
+
+            if hasattr(source, 'volume'):
+                source.volume = self.volume
+            self.voice_client.play(source, after=self.after_play)
+
+            # Send Now Playing embed automatically for auto-play
+            try:
+                from utils.embed_builder import EmbedBuilder
+                # Find the bot instance and music cog
+                for cog_name, cog in self.voice_client.guild.bot.cogs.items():
+                    if cog_name == 'MusicCog' and hasattr(cog, 'last_channel'):
+                        if self.voice_client.guild.id in cog.last_channel:
+                            channel = cog.last_channel[self.voice_client.guild.id]
+                            embed = EmbedBuilder.now_playing(
+                                track, None,  # No specific requester for auto-play
+                                self.volume, self.queue.repeat_mode, self.queue.shuffled
+                            )
+                            asyncio.create_task(channel.send(embed=embed))
+                        break
+            except Exception as e:
+                logging.warning(f"Failed to send auto Now Playing embed: {e}")
+
+            logging.info(f"Auto-playing: {track['title']}")
+        except Exception as e:
+            logging.error(f"Error auto-playing track: {e}")
+            self.is_playing = False
+            self.current_track = None
+            # Try next track
+            asyncio.create_task(self.play_next_auto())
 
     async def pause(self):
         if self.voice_client.is_playing():

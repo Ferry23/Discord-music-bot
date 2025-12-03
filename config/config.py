@@ -1,5 +1,5 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
 
 load_dotenv()
 
@@ -18,3 +18,4 @@ class Config:
             raise ValueError("DISCORD_TOKEN environment variable is not set")
         if not cls.GENIUS_ACCESS_TOKEN:
             raise ValueError("GENIUS_ACCESS_TOKEN environment variable is not set")
+        # Spotify credentials are optional - will fallback to basic conversion if not set

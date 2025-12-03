@@ -60,7 +60,11 @@ class PlaylistCog(commands.Cog):
         if not ctx.guild.voice_client:
             await voice_channel.connect()
 
-        player = self.bot.get_cog('MusicCog').get_player(ctx.guild)
+        # Store the channel for auto Now Playing messages
+        music_cog = self.bot.get_cog('MusicCog')
+        music_cog.last_channel[ctx.guild.id] = ctx.channel
+
+        player = music_cog.get_player(ctx.guild)
         if not player:
             return
 
@@ -71,7 +75,7 @@ class PlaylistCog(commands.Cog):
 
         if not player.is_playing:
             player.cancel_idle_timer()
-            await player.play_next()
+            await player.play_next(ctx)  # Pass ctx for Now Playing
 
     @playlist.command()
     async def list(self, ctx):
