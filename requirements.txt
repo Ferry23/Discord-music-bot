@@ -10,4 +10,5 @@ PyNaCl
 # System dependencies (not installed via pip):
 # - FFmpeg (required for audio playback)
 #   Windows: Install via Chocolatey: choco install ffmpeg
+#   Linux/Railway: Automatically installed via Nixpacks/apt
 #   Or download from: https://ffmpeg.org/download.html

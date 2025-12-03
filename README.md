@@ -42,17 +42,32 @@ Bot musik Discord lengkap dengan fitur-fitur modern dan advanced! Mendukung stre
 
 ## 🚀 Quick Start
 
-### Persiapan
-1. **Clone repository**:
-   ```bash
-   git clone https://github.com/Ferry23/Discord-music-bot.git
-   cd Discord-music-bot
+### Opsi 1: Deploy ke Railway (Recommended)
+
+1. **Fork repository** ini ke GitHub Anda
+2. **Connect ke Railway**:
+   - Kunjungi [Railway.app](https://railway.app)
+   - Connect GitHub repository
+   - Deploy otomatis dengan Nixpacks
+3. **Set Environment Variables** di Railway dashboard:
    ```
+   DISCORD_TOKEN=your_discord_bot_token
+   GENIUS_ACCESS_TOKEN=your_genius_token
+   ```
+4. **Bot siap digunakan!** FFmpeg otomatis terinstall via `nixpacks.toml`
+
+### Opsi 2: Local Development
+
+1. **Clone repository**:
+    ```bash
+    git clone https://github.com/Ferry23/Discord-music-bot.git
+    cd Discord-music-bot
+    ```
 
 2. **Install Python dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+    ```bash
+    pip install -r requirements.txt
+    ```
 
 3. **Install FFmpeg** (wajib untuk audio streaming):
    - **Windows**:

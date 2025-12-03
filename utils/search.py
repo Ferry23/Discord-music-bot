@@ -51,13 +51,13 @@ class MusicSearch:
             url = url.split('&')[0]  # Remove playlist and other parameters
 
         # Optimized options for YouTube & Spotify (converted to YouTube)
+        # Use yt-dlp's built-in FFmpeg detection
         ydl_opts = {
             'quiet': True,
             'no_warnings': True,
             'extract_flat': False,
             'noplaylist': True,
             'format': 'bestaudio[abr<=128]/best[abr<=128]',  # Audio format optimized for Discord
-            'ffmpeg_location': None,
             'postprocessors': [],
         }
         try:

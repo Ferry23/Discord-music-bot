@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import logging
+import os
 from config.config import Config
 
 # Setup logging
@@ -8,6 +9,30 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 # Validate config
 Config.validate()
+
+# Set FFmpeg path for audio processing
+if not os.environ.get('FFMPEG_PATH'):
+    # Try to find FFmpeg in common locations (Windows & Linux)
+    ffmpeg_paths = [
+        # Windows paths
+        r'C:\ProgramData\chocolatey\bin\ffmpeg.exe',
+        r'C:\ProgramData\Chocolatey\bin\ffmpeg.exe',
+        r'C:\path_programs\ffmpeg.exe',
+        r'C:\ffmpeg\bin\ffmpeg.exe',
+        r'C:\FFmpeg\bin\ffmpeg.exe',
+        # Linux paths (Railway, etc.)
+        '/usr/bin/ffmpeg',
+        '/usr/local/bin/ffmpeg',
+        '/bin/ffmpeg',
+        '/opt/ffmpeg/bin/ffmpeg',
+        '/app/ffmpeg/ffmpeg',
+        '/nix/store/*/bin/ffmpeg'
+    ]
+    for path in ffmpeg_paths:
+        if os.path.exists(path):
+            os.environ['FFMPEG_PATH'] = path
+            logging.info(f"Set FFMPEG_PATH to: {path}")
+            break
 
 # Create bot instance
 intents = discord.Intents.default()

@@ -26,64 +26,79 @@ class MusicPlayer:
             # Try multiple ways to find FFmpeg
             ffmpeg_path = None
 
-            # Method 1: Check PATH (case insensitive)
-            for name in ['ffmpeg', 'ffmpeg.exe', 'FFMPEG', 'FFMPEG.EXE']:
-                ffmpeg_path = shutil.which(name)
-                if ffmpeg_path:
-                    break
+            # Method 1: Check environment variable first
+            ffmpeg_path = os.environ.get('FFMPEG_PATH')
+            if ffmpeg_path and os.path.exists(ffmpeg_path):
+                logging.info(f"FFmpeg found via environment variable: {ffmpeg_path}")
+            else:
+                # Method 2: Check PATH (case insensitive)
+                for name in ['ffmpeg', 'ffmpeg.exe', 'FFMPEG', 'FFMPEG.EXE']:
+                    ffmpeg_path = shutil.which(name)
+                    if ffmpeg_path:
+                        break
 
-            # Method 2: Check common installation locations (case insensitive)
+            # Method 3: Check common installation locations (Windows & Linux)
             if not ffmpeg_path:
                 common_paths = [
+                    # Windows paths
                     r'C:\ProgramData\chocolatey\bin\ffmpeg.exe',
                     r'C:\ProgramData\Chocolatey\bin\ffmpeg.exe',
                     r'C:\path_programs\ffmpeg.exe',
                     r'C:\ffmpeg\bin\ffmpeg.exe',
                     r'C:\FFmpeg\bin\ffmpeg.exe',
                     r'C:\Users\Ferry Ardiansyah\ffmpeg\bin\ffmpeg.exe',
-                    r'C:\ffmpeg\bin\ffmpeg.exe',
                     r'C:\Program Files\FFmpeg\bin\ffmpeg.exe',
-                    r'C:\Program Files (x86)\FFmpeg\bin\ffmpeg.exe'
+                    r'C:\Program Files (x86)\FFmpeg\bin\ffmpeg.exe',
+                    os.path.expanduser(r'~\ffmpeg\bin\ffmpeg.exe'),
+                    r'C:\tools\ffmpeg\bin\ffmpeg.exe',
+                    r'C:\bin\ffmpeg.exe',
+                    r'C:\msys64\mingw64\bin\ffmpeg.exe',
+                    r'C:\mingw64\bin\ffmpeg.exe',
+                    # Linux paths (for Railway and other deployments)
+                    '/usr/bin/ffmpeg',
+                    '/usr/local/bin/ffmpeg',
+                    '/bin/ffmpeg',
+                    '/opt/ffmpeg/bin/ffmpeg',
+                    '/app/ffmpeg/ffmpeg',  # Railway app directory
+                    '/nix/store/*/bin/ffmpeg'  # Nixpacks path
                 ]
                 for path in common_paths:
                     if os.path.exists(path):
                         ffmpeg_path = path
                         break
 
-            # Method 3: Check if ffmpeg command works
+            # Method 4: Try to find via where command (Windows specific)
             if not ffmpeg_path:
                 try:
-                    result = subprocess.run(['ffmpeg', '-version'], capture_output=True, text=True, timeout=5)
-                    if result.returncode == 0:
-                        ffmpeg_path = 'ffmpeg'  # Use command name
-                        logging.info("FFmpeg found via command execution")
-                except (subprocess.TimeoutExpired, FileNotFoundError, subprocess.SubprocessError):
+                    import subprocess
+                    result = subprocess.run(['where', 'ffmpeg'], capture_output=True, text=True, shell=True)
+                    if result.returncode == 0 and result.stdout.strip():
+                        ffmpeg_path = result.stdout.strip().split('\n')[0]
+                        logging.info(f"FFmpeg found via 'where' command: {ffmpeg_path}")
+                except Exception:
                     pass
 
             if ffmpeg_path:
-                logging.info(f"Found FFmpeg at: {ffmpeg_path}")
-                # Verify FFmpeg works
+                logging.info(f"Using FFmpeg at: {ffmpeg_path}")
+                # Test FFmpeg quickly
                 try:
-                    test_result = subprocess.run([ffmpeg_path, '-version'], capture_output=True, timeout=3)
-                    if test_result.returncode != 0:
-                        logging.warning(f"FFmpeg at {ffmpeg_path} failed version check")
-                        ffmpeg_path = None
+                    test_result = subprocess.run([ffmpeg_path, '-version'], capture_output=True, timeout=2)
+                    if test_result.returncode == 0:
+                        return discord.FFmpegPCMAudio(url,
+                            executable=ffmpeg_path,
+                            before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                            options='-vn -f s16le -ar 48000 -ac 2')
+                    else:
+                        logging.warning(f"FFmpeg test failed for {ffmpeg_path}")
                 except Exception as e:
-                    logging.warning(f"FFmpeg test failed: {e}")
-                    ffmpeg_path = None
+                    logging.warning(f"FFmpeg test exception: {e}")
 
-            if ffmpeg_path:
-                # Use FFmpeg with the extracted URL
-                return discord.FFmpegPCMAudio(url,
-                    executable=ffmpeg_path,
-                    before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-                    options='-vn -f s16le -ar 48000 -ac 2')
-            else:
-                logging.warning("FFmpeg not found in PATH or common locations, trying default")
-                # Try default FFmpeg (might work if it's in system PATH during runtime)
-                return discord.FFmpegPCMAudio(url,
-                    before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-                    options='-vn -f s16le -ar 48000 -ac 2')
+            # Last resort: try without explicit executable
+            logging.warning("FFmpeg not found, trying system default")
+            return discord.FFmpegPCMAudio(url,
+                before_options='-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+                options='-vn -f s16le -ar 48000 -ac 2')
+
         except Exception as e:
             logging.error(f"Error creating audio source: {e}")
             return None
